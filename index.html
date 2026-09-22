@@ -346,7 +346,7 @@
     document.getElementById('statDelta').textContent = fmtMoney(delta);
     document.getElementById('statDelta').style.color = delta > 0 ? 'var(--ok-text)' : delta < 0 ? 'var(--bad-text)' : 'var(--ink)';
     document.getElementById('statShare').textContent = total > 0 ? (g*100).toFixed(1) + '%' : '—';
-    document.getElementById('statPos').textContent = total > 0 ? (g*100).toFixed(1) + '% of the way around from start' : '—';
+    document.getElementById('statPos').textContent = total > 0 ? (g*100).toFixed(1) + '%' : '—';
     var drift = (g - 0.5) * 100;
     document.getElementById('statDrift').textContent = total > 0 ? (drift >= 0 ? '+' : '') + drift.toFixed(1) + '%' : '—';
   }
