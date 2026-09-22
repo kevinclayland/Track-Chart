@@ -139,25 +139,24 @@
   .legend .dot{ display:inline-flex; align-items:center; gap:6px; }
   .legend .swatch{ width:10px; height:10px; border-radius:3px; display:inline-block; }
 
-  .track-wrap{ position:relative; width:100%; max-width:580px; }
+  .track-wrap{ position:relative; width:100%; max-width:580px; container-type:inline-size; }
   .track-wrap svg{ width:100%; height:auto; display:block; overflow:visible; }
 
   .center-readout{
     position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
-    display:flex; flex-direction:column; align-items:center; gap:4px;
+    display:flex; flex-direction:column; align-items:center; gap:0.6cqw;
     pointer-events:none; width: 62%;
   }
-  .delta-pill{
-    background:var(--surface); border:1px solid var(--border); border-radius:999px;
-    padding:8px 18px; font-size:17px; font-weight:600; white-space:nowrap;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+  .delta-value{
+    font-size: clamp(14px, 9cqw, 34px); font-weight:700; white-space:nowrap;
+    line-height:1;
   }
-  .delta-pill.pos{ color: var(--ok-text); }
-  .delta-pill.neg{ color: var(--bad-text); }
-  .delta-pill.zero{ color: var(--ink-2); }
-  .values-row{ display:flex; gap:14px; font-size:13px; font-variant-numeric:tabular-nums; }
-  .values-row .v{ display:flex; align-items:center; gap:5px; }
-  .values-row .v .dot{ width:7px; height:7px; border-radius:50%; }
+  .delta-value.pos{ color: var(--ok-text); }
+  .delta-value.neg{ color: var(--bad-text); }
+  .delta-value.zero{ color: var(--ink-2); }
+  .values-row{ display:flex; gap:3.2cqw; font-size: clamp(8px, 3cqw, 13px); font-variant-numeric:tabular-nums; }
+  .values-row .v{ display:flex; align-items:center; gap:0.9cqw; }
+  .values-row .v .dot{ width:0.55em; height:0.55em; border-radius:50%; flex:none; }
   .values-row .out-v{ color: var(--red); }
   .values-row .in-v{ color: var(--green); }
 
@@ -216,7 +215,7 @@
     <div class="track-wrap">
       <svg id="trackSvg" viewBox="0 0 400 200" role="img" aria-labelledby="trackTitle"></svg>
       <div class="center-readout">
-        <div class="delta-pill" id="deltaPill"></div>
+        <div class="delta-value" id="deltaPill"></div>
         <div class="values-row">
           <span class="v out-v"><span class="dot" id="outDot"></span><span id="outLabel"></span></span>
           <span class="v in-v"><span class="dot" id="inDot"></span><span id="inLabel"></span></span>
@@ -338,7 +337,7 @@
     var delta = inAmt - outAmt;
     var pill = document.getElementById('deltaPill');
     pill.textContent = 'Δ ' + fmtMoney(delta);
-    pill.className = 'delta-pill ' + (delta > 0 ? 'pos' : delta < 0 ? 'neg' : 'zero');
+    pill.className = 'delta-value ' + (delta > 0 ? 'pos' : delta < 0 ? 'neg' : 'zero');
     document.getElementById('outLabel').textContent = '-' + fmtMoney(outAmt).replace('-','');
     document.getElementById('inLabel').textContent = fmtMoney(inAmt);
 
