@@ -348,7 +348,7 @@
     document.getElementById('statShare').textContent = total > 0 ? (g*100).toFixed(1) + '%' : '—';
     document.getElementById('statPos').textContent = total > 0 ? (g*100).toFixed(1) + '% of the way around from start' : '—';
     var drift = (g - 0.5) * 100;
-    document.getElementById('statDrift').textContent = total > 0 ? (drift >= 0 ? '+' : '') + drift.toFixed(1) + ' pts toward ' + (drift === 0 ? 'neither side' : drift > 0 ? 'the in side' : 'the out side') : '—';
+    document.getElementById('statDrift').textContent = total > 0 ? (drift >= 0 ? '+' : '') + drift.toFixed(1) + '%' : '—';
   }
 
   document.getElementById('inAmt').addEventListener('input', render);
