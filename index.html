@@ -211,7 +211,7 @@
   <section class="card chart-card">
     <h2>Today's Profit</h2>
     <div class="track-wrap">
-      <svg id="trackSvg" viewBox="0 0 260 260" role="img" aria-labelledby="trackTitle"></svg>
+      <svg id="trackSvg" viewBox="0 0 400 200" role="img" aria-labelledby="trackTitle"></svg>
       <div class="center-readout">
         <div class="delta-value" id="deltaPill"></div>
         <div class="values-row">
@@ -241,22 +241,45 @@
 <script>
 (function(){
   var svg = document.getElementById('trackSvg');
-  var Rc = 90; // circle radius
-  var T = 2 * Math.PI * Rc; // total arc length around the loop
+  var W = 200, R = 60; // half-width of straight run, cap radius
+  var b1 = W/2, b2 = b1 + Math.PI*R, b3 = b2 + W/2, b4 = b3 + W/2, b5 = b4 + Math.PI*R, T = b5 + W/2;
 
   function trackPoint(s){
     s = ((s % T) + T) % T;
-    var a = Math.PI/2 - s/Rc;
-    return {x: Rc*Math.cos(a), y: Rc*Math.sin(a)};
+    if (s <= b1) return {x: s, y: R};
+    if (s <= b2){ var t = s-b1, a = Math.PI/2 - t/R; return {x: W/2+R*Math.cos(a), y: R*Math.sin(a)}; }
+    if (s <= b3){ var t2 = s-b2; return {x: W/2 - t2, y: -R}; }
+    if (s <= b4){ var t3 = s-b3; return {x: -t3, y: -R}; }
+    if (s <= b5){ var t4 = s-b4, a2 = -Math.PI/2 - t4/R; return {x: -W/2+R*Math.cos(a2), y: R*Math.sin(a2)}; }
+    var t5 = s-b5; return {x: -W/2+t5, y: R};
   }
 
-  // A perfect circle needs only one arc command per colored segment, no
-  // straight-vs-curved switching, so every point on the loop is read the
-  // same way regardless of the in/out ratio.
+  // Builds an exact path (true arcs for the caps, straight lines for the
+  // straights) instead of approximating curves with short line segments,
+  // which used to show up as faceted/jagged edges once zoomed in.
   function pathFor(s0, s1){
-    var p0 = trackPoint(s0), p1 = trackPoint(s1);
-    var largeArc = (s1 - s0) > T/2 ? 1 : 0;
-    return 'M ' + p0.x.toFixed(2) + ' ' + p0.y.toFixed(2) + ' A ' + Rc.toFixed(2) + ' ' + Rc.toFixed(2) + ' 0 ' + largeArc + ' 0 ' + p1.x.toFixed(2) + ' ' + p1.y.toFixed(2);
+    var boundaries = [b1, b2, b3, b4, b5];
+    var p0 = trackPoint(s0);
+    var d = 'M ' + p0.x.toFixed(2) + ' ' + p0.y.toFixed(2);
+    var stops = [];
+    for (var i = 0; i < boundaries.length; i++){
+      if (boundaries[i] > s0 && boundaries[i] < s1) stops.push(boundaries[i]);
+    }
+    stops.push(s1);
+    var cur = s0;
+    for (var i = 0; i < stops.length; i++){
+      var segEnd = stops[i];
+      var mid = (cur + segEnd) / 2;
+      var pEnd = trackPoint(segEnd);
+      var isArc = (mid > b1 && mid <= b2) || (mid > b4 && mid <= b5);
+      if (isArc){
+        d += ' A ' + R.toFixed(2) + ' ' + R.toFixed(2) + ' 0 0 0 ' + pEnd.x.toFixed(2) + ' ' + pEnd.y.toFixed(2);
+      } else {
+        d += ' L ' + pEnd.x.toFixed(2) + ' ' + pEnd.y.toFixed(2);
+      }
+      cur = segEnd;
+    }
+    return d;
   }
 
   function tangent(s){
@@ -267,7 +290,7 @@
   }
 
   var BAND = 34, START_GAP = 2;
-  var cx = 130, cy = 130;
+  var cx = 200, cy = 100;
 
   function fmtMoney(n){
     var sign = n < 0 ? '-' : '';
