@@ -161,7 +161,8 @@
   .values-row .in-v{ color: var(--green); }
 
   /* ---- stats ---- */
-  .stats h2{ font-size:13px; text-transform:uppercase; letter-spacing:0.04em; color:var(--ink-muted); margin:0 0 12px; font-weight:700; }
+  .chart-card h2, .stats h2{ font-size:13px; text-transform:uppercase; letter-spacing:0.04em; color:var(--ink-muted); margin:0 0 12px; font-weight:700; }
+  .chart-card h2{ margin:0; }
   .stats dl{ display:grid; grid-template-columns:1fr 1fr; gap:12px 20px; margin:0; }
   .stats .stat{ display:flex; flex-direction:column; gap:2px; }
   .stats dt{ font-size:12px; color:var(--ink-muted); }
@@ -208,6 +209,7 @@
   </section>
 
   <section class="card chart-card">
+    <h2>Today's Profit</h2>
     <div class="track-wrap">
       <svg id="trackSvg" viewBox="0 0 400 200" role="img" aria-labelledby="trackTitle"></svg>
       <div class="center-readout">
@@ -353,7 +355,7 @@
     // center readout
     var delta = inAmt - outAmt;
     var pill = document.getElementById('deltaPill');
-    pill.textContent = 'Δ ' + fmtMoney(delta);
+    pill.textContent = (delta > 0 ? '+' : '') + fmtMoney(delta);
     pill.className = 'delta-value ' + (delta > 0 ? 'pos' : delta < 0 ? 'neg' : 'zero');
     document.getElementById('outLabel').textContent = '-' + fmtMoney(outAmt).replace('-','');
     document.getElementById('inLabel').textContent = fmtMoney(inAmt);
