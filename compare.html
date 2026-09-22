@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Track Chart vs Diverging Bar</title>
+<style>
+  :root{
+    color-scheme: light;
+    --page:        #f9f9f7;
+    --surface:     #fcfcfb;
+    --surface-2:   #f2f1ec;
+    --ink:         #0b0b0b;
+    --ink-2:       #52514e;
+    --ink-muted:   #898781;
+    --hairline:    #e1e0d9;
+    --border:      rgba(11,11,11,0.10);
+    --ok-text:     #006300;
+    --bad-text:    #d03b3b;
+    --blue:        #2a78d6;
+    --red:         #FF0000;
+    --green:       #34C759;
+    --focus:       #2a78d6;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      color-scheme: dark;
+      --page:        #0d0d0d;
+      --surface:     #1a1a19;
+      --surface-2:   #232322;
+      --ink:         #ffffff;
+      --ink-2:       #c3c2b7;
+      --ink-muted:   #898781;
+      --hairline:    #2c2c2a;
+      --border:      rgba(255,255,255,0.10);
+      --ok-text:     #0ca30c;
+      --bad-text:    #e66767;
+      --blue:        #3987e5;
+      --red:         #FF0000;
+      --green:       #34C759;
+      --focus:       #3987e5;
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme: dark;
+    --page:        #0d0d0d;
+    --surface:     #1a1a19;
+    --surface-2:   #232322;
+    --ink:         #ffffff;
+    --ink-2:       #c3c2b7;
+    --ink-muted:   #898781;
+    --hairline:    #2c2c2a;
+    --border:      rgba(255,255,255,0.10);
+    --ok-text:     #0ca30c;
+    --bad-text:    #e66767;
+    --blue:        #3987e5;
+    --red:         #FF0000;
+    --green:       #34C759;
+    --focus:       #3987e5;
+  }
+
+  *{ box-sizing: border-box; }
+  body{
+    background: var(--page);
+    color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  .page{
+    max-width: 1160px;
+    margin: 0 auto;
+    padding: 28px 16px 48px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  header{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  header h1{
+    font-size: 20px;
+    margin: 0 0 2px;
+    letter-spacing: -0.01em;
+  }
+  header p{
+    margin: 0;
+    font-size: 13px;
+    color: var(--ink-2);
+    max-width: 56ch;
+  }
+  .theme-toggle{
+    display:flex; border:1px solid var(--border); border-radius:10px; overflow:hidden;
+    flex: none;
+  }
+  .theme-toggle button{
+    border:0; background:var(--surface-2); color:var(--ink-2); font-family:inherit;
+    font-size:12.5px; padding:6px 12px; cursor:pointer;
+  }
+  .theme-toggle button[aria-pressed="true"]{ background:var(--blue); color:#fff; }
+  .theme-toggle button:focus-visible{ outline:2px solid var(--focus); outline-offset:-2px; }
+  .card{
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+  }
+
+  /* ---- controls ---- */
+  .controls{ display:flex; flex-direction:column; gap:16px; }
+  .field-row{ display:flex; gap:16px; flex-wrap:wrap; }
+  .field{ display:flex; flex-direction:column; gap:6px; flex:1 1 140px; min-width:120px; }
+  .field label{ font-size:12px; color:var(--ink-2); font-weight:600; }
+  .field .input-wrap{
+    display:flex; align-items:center; gap:6px;
+    border:1px solid var(--border); border-radius:10px;
+    padding:8px 10px; background:var(--surface-2);
+  }
+  .field .input-wrap:focus-within{ outline:2px solid var(--focus); outline-offset:1px; }
+  .field .input-wrap span{ color:var(--ink-muted); font-size:14px; }
+  .field input[type="number"]{
+    border:0; background:transparent; color:var(--ink);
+    font-size:15px; width:100%; font-variant-numeric:tabular-nums;
+  }
+  .field input[type="number"]:focus{ outline:none; }
+  .field.in .input-wrap{ border-color: color-mix(in oklab, var(--green) 45%, var(--border)); }
+  .field.out .input-wrap{ border-color: color-mix(in oklab, var(--red) 45%, var(--border)); }
+
+  .presets{ display:flex; gap:8px; flex-wrap:wrap; }
+  .presets button{
+    border:1px solid var(--border); background:var(--surface-2); color:var(--ink);
+    border-radius:999px; padding:6px 12px; font-size:12.5px; cursor:pointer;
+    font-family:inherit;
+  }
+  .presets button:hover{ background:var(--hairline); }
+  .presets button:focus-visible{ outline:2px solid var(--focus); outline-offset:2px; }
+
+  /* ---- compare grid ---- */
+  .compare-grid{ display:grid; grid-template-columns:1fr 1fr; gap:16px; align-items:stretch; }
+  @media (max-width:760px){ .compare-grid{ grid-template-columns:1fr; } }
+
+  .chart-card{ display:flex; flex-direction:column; gap:14px; align-items:center; }
+  .chart-card h2{
+    font-size:15px; font-weight:600; margin:0; align-self:flex-start;
+    color:var(--ink-2);
+  }
+  .legend{ display:flex; gap:18px; font-size:13px; color:var(--ink-2); }
+  .legend .dot{ display:inline-flex; align-items:center; gap:6px; }
+  .legend .swatch{ width:10px; height:10px; border-radius:3px; display:inline-block; }
+
+  .delta-value{
+    font-size: clamp(20px, 6cqw, 30px); font-weight:700; white-space:nowrap; line-height:1;
+  }
+  .delta-value.pos{ color: var(--ok-text); }
+  .delta-value.neg{ color: var(--bad-text); }
+  .delta-value.zero{ color: var(--ink-2); }
+  .values-row{ display:flex; gap:14px; font-size:13px; font-variant-numeric:tabular-nums; }
+  .values-row .v{ display:flex; align-items:center; gap:6px; }
+  .values-row .v .dot{ width:7px; height:7px; border-radius:50%; flex:none; }
+  .values-row .out-v{ color: var(--red); }
+  .values-row .in-v{ color: var(--green); }
+
+  /* ---- track chart ---- */
+  .track-wrap{ position:relative; width:100%; max-width:400px; container-type:inline-size; }
+  .track-wrap svg{ width:100%; height:auto; display:block; overflow:visible; }
+  .center-readout{
+    position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+    display:flex; flex-direction:column; align-items:center; gap:0.8cqw;
+    pointer-events:none; width: 62%;
+  }
+  .center-readout .delta-value{ font-size: clamp(14px, 9cqw, 26px); }
+  .center-readout .values-row{ gap:3.2cqw; font-size: clamp(8px, 3cqw, 12px); }
+  .center-readout .values-row .v .dot{ width:0.55em; height:0.55em; }
+
+  /* ---- diverging bar ---- */
+  .diverging-wrap{ width:100%; max-width:400px; display:flex; flex-direction:column; align-items:center; gap:14px; padding-top:6px; }
+  .diverging-track{
+    position:relative; width:100%; height:44px;
+    background:var(--surface-2); border-radius:8px; overflow:hidden;
+  }
+  .diverging-bar{ position:absolute; top:0; bottom:0; transition:none; }
+  .diverging-bar.in-bar{ left:50%; background:var(--green); border-radius:0 6px 6px 0; }
+  .diverging-bar.out-bar{ right:50%; background:var(--red); border-radius:6px 0 0 6px; }
+  .diverging-center{
+    position:absolute; left:50%; top:-8px; bottom:-8px; width:0;
+    border-left:2px dashed var(--ink); opacity:0.6; transform:translateX(-1px); z-index:2;
+  }
+  .diverging-center-label{
+    font-size:10px; color:var(--ink-muted); text-align:center; margin-top:-4px;
+  }
+
+  @media (max-width:480px){
+    .field-row{ flex-direction:column; }
+    .field-row .field{ flex: none; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <div>
+      <h1>Track Chart vs Diverging Bar</h1>
+      <p>Same in/out data, two shapes. Built to honestly test whether the racetrack loop is actually pulling its weight against the obvious alternative.</p>
+    </div>
+    <div class="theme-toggle" role="group" aria-label="Theme">
+      <button id="themeLight" aria-pressed="false">Light</button>
+      <button id="themeDark" aria-pressed="false">Dark</button>
+    </div>
+  </header>
+
+  <section class="card controls">
+    <div class="field-row">
+      <div class="field in">
+        <label for="inAmt">Money in</label>
+        <div class="input-wrap"><span>$</span><input id="inAmt" type="number" min="0" step="1" value="203"></div>
+      </div>
+      <div class="field out">
+        <label for="outAmt">Money out</label>
+        <div class="input-wrap"><span>$</span><input id="outAmt" type="number" min="0" step="1" value="172"></div>
+      </div>
+    </div>
+
+    <div class="presets" id="presets">
+      <button data-in="150" data-out="150">Balanced</button>
+      <button data-in="203" data-out="172">Slight surplus</button>
+      <button data-in="174" data-out="278">Slight deficit</button>
+      <button data-in="950" data-out="50">Extreme surplus</button>
+      <button data-in="50" data-out="950">Extreme deficit</button>
+      <button data-in="200" data-out="0">All in, no out</button>
+      <button data-in="0" data-out="200">All out, no in</button>
+    </div>
+  </section>
+
+  <div class="compare-grid">
+    <section class="card chart-card">
+      <h2>Track Chart</h2>
+      <div class="track-wrap">
+        <svg id="trackSvg" viewBox="0 0 400 200" role="img" aria-label="Track chart"></svg>
+        <div class="center-readout">
+          <div class="delta-value" id="trackDelta"></div>
+          <div class="values-row">
+            <span class="v out-v"><span class="dot" id="trackOutDot"></span><span id="trackOutLabel"></span></span>
+            <span class="v in-v"><span class="dot" id="trackInDot"></span><span id="trackInLabel"></span></span>
+          </div>
+        </div>
+      </div>
+      <div class="legend">
+        <span class="dot"><span class="swatch" id="trackLegendIn"></span>In</span>
+        <span class="dot"><span class="swatch" id="trackLegendOut"></span>Out</span>
+      </div>
+    </section>
+
+    <section class="card chart-card">
+      <h2>Diverging Bar</h2>
+      <div class="diverging-wrap">
+        <div class="diverging-track">
+          <div class="diverging-center"></div>
+          <div class="diverging-bar out-bar" id="outBar"></div>
+          <div class="diverging-bar in-bar" id="inBar"></div>
+        </div>
+        <div class="diverging-center-label">balanced</div>
+        <div class="delta-value" id="barDelta"></div>
+        <div class="values-row">
+          <span class="v out-v"><span class="dot" id="barOutDot"></span><span id="barOutLabel"></span></span>
+          <span class="v in-v"><span class="dot" id="barInDot"></span><span id="barInLabel"></span></span>
+        </div>
+      </div>
+      <div class="legend">
+        <span class="dot"><span class="swatch" id="barLegendIn"></span>In</span>
+        <span class="dot"><span class="swatch" id="barLegendOut"></span>Out</span>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+(function(){
+  var svg = document.getElementById('trackSvg');
+  var W = 200, R = 60;
+  var b1 = W/2, b2 = b1 + Math.PI*R, b3 = b2 + W/2, b4 = b3 + W/2, b5 = b4 + Math.PI*R, T = b5 + W/2;
+
+  function trackPoint(s){
+    s = ((s % T) + T) % T;
+    if (s <= b1) return {x: s, y: R};
+    if (s <= b2){ var t = s-b1, a = Math.PI/2 - t/R; return {x: W/2+R*Math.cos(a), y: R*Math.sin(a)}; }
+    if (s <= b3){ var t2 = s-b2; return {x: W/2 - t2, y: -R}; }
+    if (s <= b4){ var t3 = s-b3; return {x: -t3, y: -R}; }
+    if (s <= b5){ var t4 = s-b4, a2 = -Math.PI/2 - t4/R; return {x: -W/2+R*Math.cos(a2), y: R*Math.sin(a2)}; }
+    var t5 = s-b5; return {x: -W/2+t5, y: R};
+  }
+
+  function pathFor(s0, s1){
+    var boundaries = [b1, b2, b3, b4, b5];
+    var p0 = trackPoint(s0);
+    var d = 'M ' + p0.x.toFixed(2) + ' ' + p0.y.toFixed(2);
+    var stops = [];
+    for (var i = 0; i < boundaries.length; i++){
+      if (boundaries[i] > s0 && boundaries[i] < s1) stops.push(boundaries[i]);
+    }
+    stops.push(s1);
+    var cur = s0;
+    for (var i = 0; i < stops.length; i++){
+      var segEnd = stops[i];
+      var mid = (cur + segEnd) / 2;
+      var pEnd = trackPoint(segEnd);
+      var isArc = (mid > b1 && mid <= b2) || (mid > b4 && mid <= b5);
+      if (isArc){
+        d += ' A ' + R.toFixed(2) + ' ' + R.toFixed(2) + ' 0 0 0 ' + pEnd.x.toFixed(2) + ' ' + pEnd.y.toFixed(2);
+      } else {
+        d += ' L ' + pEnd.x.toFixed(2) + ' ' + pEnd.y.toFixed(2);
+      }
+      cur = segEnd;
+    }
+    return d;
+  }
+
+  function tangent(s){
+    var eps = 0.6;
+    var a = trackPoint(s-eps), b = trackPoint(s+eps);
+    var dx = b.x-a.x, dy = b.y-a.y, len = Math.hypot(dx,dy) || 1;
+    return {x: dx/len, y: dy/len};
+  }
+
+  var BAND = 34, START_GAP = 2;
+  var cx = 200, cy = 100;
+
+  function fmtMoney(n){
+    var sign = n < 0 ? '-' : '';
+    return sign + '$' + Math.abs(Math.round(n)).toLocaleString();
+  }
+
+  function colors(){
+    var css = getComputedStyle(document.documentElement);
+    return {
+      inColor: css.getPropertyValue('--green').trim(),
+      outColor: css.getPropertyValue('--red').trim()
+    };
+  }
+
+  function renderTrack(inAmt, outAmt, total, g, c){
+    document.getElementById('trackLegendIn').style.background = c.inColor;
+    document.getElementById('trackLegendOut').style.background = c.outColor;
+    document.getElementById('trackInDot').style.background = c.inColor;
+    document.getElementById('trackOutDot').style.background = c.outColor;
+
+    var sDiv = g * T;
+    var parts = [];
+    parts.push('<g transform="translate(' + cx + ',' + cy + ')">');
+
+    if (total === 0){
+      parts.push('<path d="' + pathFor(0, T-0.001) + '" fill="none" stroke="var(--hairline)" stroke-width="' + BAND + '" stroke-linecap="butt"/>');
+    } else {
+      var inStart = Math.min(sDiv, START_GAP/2);
+      var outEnd = Math.max(sDiv, T - START_GAP/2);
+      if (sDiv > inStart) parts.push('<path d="' + pathFor(inStart, sDiv) + '" fill="none" stroke="' + c.inColor + '" stroke-width="' + BAND + '" stroke-linecap="butt"/>');
+      if (outEnd > sDiv) parts.push('<path d="' + pathFor(sDiv, outEnd) + '" fill="none" stroke="' + c.outColor + '" stroke-width="' + BAND + '" stroke-linecap="butt"/>');
+    }
+
+    var refP = trackPoint(T/2);
+    parts.push('<line x1="' + refP.x + '" y1="' + (refP.y - BAND/2 - 6) + '" x2="' + refP.x + '" y2="' + (refP.y + BAND/2 + 6) + '" stroke="var(--ink)" stroke-width="2" stroke-dasharray="3,3"/>');
+
+    if (total > 0 && inAmt > 0 && outAmt > 0){
+      var dp = trackPoint(sDiv);
+      var tan = tangent(sDiv);
+      var nx = -tan.y, ny = tan.x;
+      var half = BAND/2 + 5;
+      var lineCoords = 'x1="' + (dp.x - nx*half) + '" y1="' + (dp.y - ny*half) + '" x2="' + (dp.x + nx*half) + '" y2="' + (dp.y + ny*half) + '"';
+      parts.push('<line ' + lineCoords + ' stroke="var(--page)" stroke-width="9" stroke-linecap="round"/>');
+      parts.push('<line ' + lineCoords + ' stroke="var(--ink)" stroke-width="4" stroke-linecap="round"/>');
+    }
+
+    parts.push('</g>');
+    svg.innerHTML = parts.join('');
+
+    var delta = inAmt - outAmt;
+    var pill = document.getElementById('trackDelta');
+    pill.textContent = (delta > 0 ? '+' : '') + fmtMoney(delta);
+    pill.className = 'delta-value ' + (delta > 0 ? 'pos' : delta < 0 ? 'neg' : 'zero');
+    document.getElementById('trackOutLabel').textContent = '-' + fmtMoney(outAmt).replace('-','');
+    document.getElementById('trackInLabel').textContent = fmtMoney(inAmt);
+  }
+
+  function renderBar(inAmt, outAmt, total, g, c){
+    document.getElementById('barLegendIn').style.background = c.inColor;
+    document.getElementById('barLegendOut').style.background = c.outColor;
+    document.getElementById('barInDot').style.background = c.inColor;
+    document.getElementById('barOutDot').style.background = c.outColor;
+
+    var inPct = total > 0 ? g * 50 : 0;
+    var outPct = total > 0 ? (1 - g) * 50 : 0;
+    document.getElementById('inBar').style.width = inPct + '%';
+    document.getElementById('outBar').style.width = outPct + '%';
+    document.getElementById('inBar').style.background = c.inColor;
+    document.getElementById('outBar').style.background = c.outColor;
+
+    var delta = inAmt - outAmt;
+    var pill = document.getElementById('barDelta');
+    pill.textContent = (delta > 0 ? '+' : '') + fmtMoney(delta);
+    pill.className = 'delta-value ' + (delta > 0 ? 'pos' : delta < 0 ? 'neg' : 'zero');
+    document.getElementById('barOutLabel').textContent = '-' + fmtMoney(outAmt).replace('-','');
+    document.getElementById('barInLabel').textContent = fmtMoney(inAmt);
+  }
+
+  function render(){
+    var inAmt = Math.max(0, parseFloat(document.getElementById('inAmt').value) || 0);
+    var outAmt = Math.max(0, parseFloat(document.getElementById('outAmt').value) || 0);
+    var total = inAmt + outAmt;
+    var g = total > 0 ? inAmt/total : 0.5;
+    var c = colors();
+    renderTrack(inAmt, outAmt, total, g, c);
+    renderBar(inAmt, outAmt, total, g, c);
+  }
+
+  document.getElementById('inAmt').addEventListener('input', render);
+  document.getElementById('outAmt').addEventListener('input', render);
+
+  document.getElementById('presets').addEventListener('click', function(e){
+    var btn = e.target.closest('button');
+    if (!btn) return;
+    document.getElementById('inAmt').value = btn.getAttribute('data-in');
+    document.getElementById('outAmt').value = btn.getAttribute('data-out');
+    render();
+  });
+
+  function setTheme(mode){
+    document.documentElement.setAttribute('data-theme', mode);
+    document.getElementById('themeLight').setAttribute('aria-pressed', mode === 'light');
+    document.getElementById('themeDark').setAttribute('aria-pressed', mode === 'dark');
+    try{ localStorage.setItem('trackChartTheme', mode); }catch(e){}
+    render();
+  }
+  document.getElementById('themeLight').addEventListener('click', function(){ setTheme('light'); });
+  document.getElementById('themeDark').addEventListener('click', function(){ setTheme('dark'); });
+
+  var savedTheme = null;
+  try{ savedTheme = localStorage.getItem('trackChartTheme'); }catch(e){}
+  var initialTheme = savedTheme || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  setTheme(initialTheme);
+})();
+</script>
+</body>
+</html>
