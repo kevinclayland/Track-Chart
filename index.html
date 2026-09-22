@@ -76,11 +76,27 @@
     flex-direction: column;
     gap: 16px;
   }
+  header{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
   header h1{
     font-size: 22px;
-    margin: 0 0 4px;
+    margin: 0;
     letter-spacing: -0.01em;
   }
+  .theme-toggle{
+    display:flex; border:1px solid var(--border); border-radius:10px; overflow:hidden;
+    flex: none;
+  }
+  .theme-toggle button{
+    border:0; background:var(--surface-2); color:var(--ink-2); font-family:inherit;
+    font-size:12.5px; padding:6px 12px; cursor:pointer;
+  }
+  .theme-toggle button[aria-pressed="true"]{ background:var(--blue); color:#fff; }
+  .theme-toggle button:focus-visible{ outline:2px solid var(--focus); outline-offset:-2px; }
   .card{
     background: var(--surface);
     border: 1px solid var(--border);
@@ -178,6 +194,10 @@
 <div class="page">
   <header>
     <h1>Track Chart</h1>
+    <div class="theme-toggle" role="group" aria-label="Theme">
+      <button id="themeLight" aria-pressed="false">Light</button>
+      <button id="themeDark" aria-pressed="false">Dark</button>
+    </div>
   </header>
 
   <section class="card controls">
@@ -401,7 +421,20 @@
     render();
   });
 
-  render();
+  function setTheme(mode){
+    document.documentElement.setAttribute('data-theme', mode);
+    document.getElementById('themeLight').setAttribute('aria-pressed', mode === 'light');
+    document.getElementById('themeDark').setAttribute('aria-pressed', mode === 'dark');
+    try{ localStorage.setItem('trackChartTheme', mode); }catch(e){}
+    render();
+  }
+  document.getElementById('themeLight').addEventListener('click', function(){ setTheme('light'); });
+  document.getElementById('themeDark').addEventListener('click', function(){ setTheme('dark'); });
+
+  var savedTheme = null;
+  try{ savedTheme = localStorage.getItem('trackChartTheme'); }catch(e){}
+  var initialTheme = savedTheme || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  setTheme(initialTheme);
 })();
 </script>
 </body>
