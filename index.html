@@ -289,7 +289,7 @@
     return {x: dx/len, y: dy/len};
   }
 
-  var BAND = 34;
+  var BAND = 34, START_GAP = 2;
   var cx = 200, cy = 100;
 
   function fmtMoney(n){
@@ -326,11 +326,13 @@
     } else {
       // IN always occupies the arc immediately after the fixed start point (0 = bottom-center),
       // travelling first — OUT completes the loop and closes back on that same fixed point.
-      // Butt caps (not round) keep both cuts exact, so the two colors always meet precisely
-      // at bottom-center with no bleed, whatever the ratio. They touch directly at the divider
-      // tick; the buffer around the tick comes from its own halo stroke, not a gap in the arcs.
-      if (sDiv > 0) parts.push('<path d="' + pathFor(0, sDiv) + '" fill="none" stroke="' + c.inColor + '" stroke-width="' + BAND + '" stroke-linecap="butt"/>');
-      if (T > sDiv) parts.push('<path d="' + pathFor(sDiv, T) + '" fill="none" stroke="' + c.outColor + '" stroke-width="' + BAND + '" stroke-linecap="butt"/>');
+      // They touch directly at the divider tick (its buffer comes from its own halo stroke,
+      // not a gap in the arcs), but get a small gap at the fixed start point so the two
+      // colors don't butt into each other there either.
+      var inStart = Math.min(sDiv, START_GAP/2);
+      var outEnd = Math.max(sDiv, T - START_GAP/2);
+      if (sDiv > inStart) parts.push('<path d="' + pathFor(inStart, sDiv) + '" fill="none" stroke="' + c.inColor + '" stroke-width="' + BAND + '" stroke-linecap="butt"/>');
+      if (outEnd > sDiv) parts.push('<path d="' + pathFor(sDiv, outEnd) + '" fill="none" stroke="' + c.outColor + '" stroke-width="' + BAND + '" stroke-linecap="butt"/>');
     }
 
     // balance reference tick (always at T/2 = top center)
