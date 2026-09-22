@@ -133,10 +133,6 @@
   .presets button:hover{ background:var(--hairline); }
   .presets button:focus-visible{ outline:2px solid var(--focus); outline-offset:2px; }
 
-  .toggles{ display:flex; gap:18px; flex-wrap:wrap; padding-top:4px; border-top:1px solid var(--hairline); }
-  .toggle{ display:flex; align-items:center; gap:7px; font-size:13px; color:var(--ink-2); }
-  .toggle input{ accent-color: var(--blue); width:15px; height:15px; }
-
   /* ---- chart ---- */
   .chart-card{ display:flex; flex-direction:column; gap:14px; align-items:center; }
   .legend{ display:flex; gap:18px; align-self:flex-start; font-size:13px; color:var(--ink-2); }
@@ -165,19 +161,8 @@
   .values-row .out-v{ color: var(--red); }
   .values-row .in-v{ color: var(--green); }
 
-  /* ---- comparison strip ---- */
-  .compare h2, .stats h2{ font-size:13px; text-transform:uppercase; letter-spacing:0.04em; color:var(--ink-muted); margin:0 0 12px; font-weight:700; }
-  .strip{ position:relative; height:26px; border-radius:6px; overflow:visible; background:var(--surface-2); }
-  .strip .seg{ position:absolute; top:0; bottom:0; }
-  .strip .ref-tick{ position:absolute; top:-4px; bottom:-4px; width:2px; background:var(--ink-muted); opacity:0.55; }
-  .strip .ref-tick::after{
-    content:"balanced"; position:absolute; top:-16px; left:50%; transform:translateX(-50%);
-    font-size:10px; color:var(--ink-muted); white-space:nowrap;
-  }
-  .strip .div-tick{ position:absolute; top:-6px; bottom:-6px; width:3px; background:var(--ink); border-radius:2px; }
-  .strip-wrap{ padding-top:18px; }
-
   /* ---- stats ---- */
+  .stats h2{ font-size:13px; text-transform:uppercase; letter-spacing:0.04em; color:var(--ink-muted); margin:0 0 12px; font-weight:700; }
   .stats dl{ display:grid; grid-template-columns:1fr 1fr; gap:12px 20px; margin:0; }
   .stats .stat{ display:flex; flex-direction:column; gap:2px; }
   .stats dt{ font-size:12px; color:var(--ink-muted); }
@@ -221,11 +206,6 @@
       <button data-in="200" data-out="0">All in, no out</button>
       <button data-in="0" data-out="200">All out, no in</button>
     </div>
-
-    <div class="toggles">
-      <label class="toggle"><input type="checkbox" id="toggleRef" checked> Show balance reference tick</label>
-      <label class="toggle"><input type="checkbox" id="toggleCompare" checked> Show straight-line comparison</label>
-    </div>
   </section>
 
   <section class="card chart-card">
@@ -241,16 +221,6 @@
           <span class="v out-v"><span class="dot" id="outDot"></span><span id="outLabel"></span></span>
           <span class="v in-v"><span class="dot" id="inDot"></span><span id="inLabel"></span></span>
         </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="card compare" id="compareCard">
-    <h2>Same ratio, straight line</h2>
-    <div class="strip-wrap">
-      <div class="strip" id="strip">
-        <div class="ref-tick" style="left:50%"></div>
-        <div class="div-tick" id="stripDiv"></div>
       </div>
     </div>
   </section>
@@ -332,8 +302,6 @@
     document.getElementById('inDot').style.background = c.inColor;
     document.getElementById('outDot').style.background = c.outColor;
 
-    var showRef = document.getElementById('toggleRef').checked;
-
     var parts = [];
     parts.push('<g transform="translate(' + cx + ',' + cy + ')">');
 
@@ -351,10 +319,8 @@
     }
 
     // balance reference tick (always at T/2 = top center)
-    if (showRef){
-      var refP = trackPoint(T/2);
-      parts.push('<line x1="' + refP.x + '" y1="' + (refP.y - BAND/2 - 6) + '" x2="' + refP.x + '" y2="' + (refP.y + BAND/2 + 6) + '" stroke="var(--ink-muted)" stroke-width="2" stroke-dasharray="3,3" opacity="0.6"/>');
-    }
+    var refP = trackPoint(T/2);
+    parts.push('<line x1="' + refP.x + '" y1="' + (refP.y - BAND/2 - 6) + '" x2="' + refP.x + '" y2="' + (refP.y + BAND/2 + 6) + '" stroke="var(--ink)" stroke-width="2" stroke-dasharray="3,3"/>');
 
     // moving divider tick
     if (total > 0 && inAmt > 0 && outAmt > 0){
@@ -382,36 +348,11 @@
     document.getElementById('statShare').textContent = total > 0 ? (g*100).toFixed(1) + '%' : '—';
     document.getElementById('statPos').textContent = total > 0 ? (g*100).toFixed(1) + '% of the way around from start' : '—';
     var drift = (g - 0.5) * 100;
-    document.getElementById('statDrift').textContent = total > 0 ? (drift >= 0 ? '+' : '') + drift.toFixed(1) + ' pts toward ' + (drift === 0 ? 'neither side' : drift > 0 ? 'the out side' : 'the in side') : '—';
-
-    // linear comparison strip
-    var compareOn = document.getElementById('toggleCompare').checked;
-    document.getElementById('compareCard').style.display = compareOn ? '' : 'none';
-    var strip = document.getElementById('strip');
-    var existing = strip.querySelectorAll('.seg');
-    existing.forEach(function(e){ e.remove(); });
-    if (total > 0){
-      var gPct = g*100;
-      var segIn = document.createElement('div');
-      segIn.className = 'seg';
-      segIn.style.left = '0%'; segIn.style.width = gPct + '%';
-      segIn.style.background = c.inColor;
-      segIn.style.borderRadius = '6px 0 0 6px';
-      var segOut = document.createElement('div');
-      segOut.className = 'seg';
-      segOut.style.left = gPct + '%'; segOut.style.width = (100-gPct) + '%';
-      segOut.style.background = c.outColor;
-      segOut.style.borderRadius = '0 6px 6px 0';
-      strip.appendChild(segIn);
-      strip.appendChild(segOut);
-      document.getElementById('stripDiv').style.left = 'calc(' + gPct + '% - 1.5px)';
-    }
+    document.getElementById('statDrift').textContent = total > 0 ? (drift >= 0 ? '+' : '') + drift.toFixed(1) + ' pts toward ' + (drift === 0 ? 'neither side' : drift > 0 ? 'the in side' : 'the out side') : '—';
   }
 
   document.getElementById('inAmt').addEventListener('input', render);
   document.getElementById('outAmt').addEventListener('input', render);
-  document.getElementById('toggleRef').addEventListener('change', render);
-  document.getElementById('toggleCompare').addEventListener('change', render);
 
   document.getElementById('presets').addEventListener('click', function(e){
     var btn = e.target.closest('button');
