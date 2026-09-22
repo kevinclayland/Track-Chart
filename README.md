@@ -1,6 +1,6 @@
 # Track Chart
 
-![Track Chart demo](assets/Track Chart Type.png)
+![Track Chart demo](assets/track-chart-type.png)
 
 A new chart type for checking whether two opposing flows are in balance — at a glance, without reading a number first.
 
