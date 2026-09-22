@@ -135,7 +135,7 @@
 
   /* ---- chart ---- */
   .chart-card{ display:flex; flex-direction:column; gap:14px; align-items:center; }
-  .legend{ display:flex; gap:18px; align-self:flex-start; font-size:13px; color:var(--ink-2); }
+  .legend{ display:flex; gap:18px; font-size:13px; color:var(--ink-2); }
   .legend .dot{ display:inline-flex; align-items:center; gap:6px; }
   .legend .swatch{ width:10px; height:10px; border-radius:3px; display:inline-block; }
 
@@ -208,10 +208,6 @@
   </section>
 
   <section class="card chart-card">
-    <div class="legend">
-      <span class="dot"><span class="swatch" id="legendIn"></span>In</span>
-      <span class="dot"><span class="swatch" id="legendOut"></span>Out</span>
-    </div>
     <div class="track-wrap">
       <svg id="trackSvg" viewBox="0 0 400 200" role="img" aria-labelledby="trackTitle"></svg>
       <div class="center-readout">
@@ -221,6 +217,10 @@
           <span class="v in-v"><span class="dot" id="inDot"></span><span id="inLabel"></span></span>
         </div>
       </div>
+    </div>
+    <div class="legend">
+      <span class="dot"><span class="swatch" id="legendIn"></span>In</span>
+      <span class="dot"><span class="swatch" id="legendOut"></span>Out</span>
     </div>
   </section>
 
