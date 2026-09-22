@@ -287,7 +287,7 @@
     return {x: dx/len, y: dy/len};
   }
 
-  var BAND = 34, GAP = 2.5;
+  var BAND = 34;
   var cx = 200, cy = 100;
 
   function fmtMoney(n){
@@ -325,24 +325,26 @@
       // IN always occupies the arc immediately after the fixed start point (0 = bottom-center),
       // travelling first — OUT completes the loop and closes back on that same fixed point.
       // Butt caps (not round) keep both cuts exact, so the two colors always meet precisely
-      // at bottom-center with no bleed, whatever the ratio.
-      var gEnd = Math.max(0, sDiv - GAP);
-      if (gEnd > 0) parts.push('<path d="' + pathFor(0, gEnd) + '" fill="none" stroke="' + c.inColor + '" stroke-width="' + BAND + '" stroke-linecap="butt"/>');
-      var rStart = Math.min(T, sDiv + GAP);
-      if (T > rStart) parts.push('<path d="' + pathFor(rStart, T) + '" fill="none" stroke="' + c.outColor + '" stroke-width="' + BAND + '" stroke-linecap="butt"/>');
+      // at bottom-center with no bleed, whatever the ratio. They touch directly at the divider
+      // tick; the buffer around the tick comes from its own halo stroke, not a gap in the arcs.
+      if (sDiv > 0) parts.push('<path d="' + pathFor(0, sDiv) + '" fill="none" stroke="' + c.inColor + '" stroke-width="' + BAND + '" stroke-linecap="butt"/>');
+      if (T > sDiv) parts.push('<path d="' + pathFor(sDiv, T) + '" fill="none" stroke="' + c.outColor + '" stroke-width="' + BAND + '" stroke-linecap="butt"/>');
     }
 
     // balance reference tick (always at T/2 = top center)
     var refP = trackPoint(T/2);
     parts.push('<line x1="' + refP.x + '" y1="' + (refP.y - BAND/2 - 6) + '" x2="' + refP.x + '" y2="' + (refP.y + BAND/2 + 6) + '" stroke="var(--ink)" stroke-width="2" stroke-dasharray="3,3"/>');
 
-    // moving divider tick
+    // moving divider tick — a page-colored halo drawn first creates the buffer
+    // around it, instead of leaving a gap in the arcs underneath.
     if (total > 0 && inAmt > 0 && outAmt > 0){
       var dp = trackPoint(sDiv);
       var tan = tangent(sDiv);
       var nx = -tan.y, ny = tan.x;
       var half = BAND/2 + 5;
-      parts.push('<line x1="' + (dp.x - nx*half) + '" y1="' + (dp.y - ny*half) + '" x2="' + (dp.x + nx*half) + '" y2="' + (dp.y + ny*half) + '" stroke="var(--ink)" stroke-width="4" stroke-linecap="round"/>');
+      var lineCoords = 'x1="' + (dp.x - nx*half) + '" y1="' + (dp.y - ny*half) + '" x2="' + (dp.x + nx*half) + '" y2="' + (dp.y + ny*half) + '"';
+      parts.push('<line ' + lineCoords + ' stroke="var(--page)" stroke-width="9" stroke-linecap="round"/>');
+      parts.push('<line ' + lineCoords + ' stroke="var(--ink)" stroke-width="4" stroke-linecap="round"/>');
     }
 
     parts.push('</g>');
