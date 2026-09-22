@@ -1,12 +1,14 @@
 # Track Chart
 
+![Track Chart demo](assets/track-chart-type.png)
+
 A new chart type for checking whether two opposing flows are in balance — at a glance, without reading a number first.
 
 **Live demo:** https://kevinclayland.github.io/Track-Chart/
 
 ## The idea
 
-Most dashboards that need to answer "does money in match money out" (or units received vs. shipped, rows read vs. rows written, debits vs. credits) fall back on a variance table or a pass/fail chip. That's a reconciliation check, and it's a real, named category in enterprise BI — but almost nothing gives the person doing the check a *shape*, just a number to read.
+Most dashboards that need to answer "does money in match money out" (or units received vs. shipped, rows read vs. rows written, debits vs. credits) fall back on a variance table or a pass/fail chip. That's a reconciliation check, and it's a real, named category in enterprise BI. Almost nothing gives the person doing the check a *shape*, just a number to read.
 
 Track Chart is a closed, racetrack-shaped loop. Two values — in and out — are drawn as colored arcs from a single fixed starting point. Because the track is left-right symmetric, a perfect 1:1 split lands the boundary exactly opposite the start, with no marker needed to prove it. Any imbalance visibly drags the boundary off-center, toward whichever side is smaller.
 
