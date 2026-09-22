@@ -19,8 +19,8 @@
     --bad-text:    #d03b3b;
     --neutral-mid: #f0efec;
     --blue:        #2a78d6;
-    --red:         #e34948;
-    --green:       #008300;
+    --red:         #FF0000;
+    --green:       #34C759;
     --focus:       #2a78d6;
   }
   @media (prefers-color-scheme: dark){
@@ -38,8 +38,8 @@
       --bad-text:    #e66767;
       --neutral-mid: #383835;
       --blue:        #3987e5;
-      --red:         #e66767;
-      --green:       #008300;
+      --red:         #FF0000;
+      --green:       #34C759;
       --focus:       #3987e5;
     }
   }
@@ -57,8 +57,8 @@
     --bad-text:    #e66767;
     --neutral-mid: #383835;
     --blue:        #3987e5;
-    --red:         #e66767;
-    --green:       #008300;
+    --red:         #FF0000;
+    --green:       #34C759;
     --focus:       #3987e5;
   }
 
@@ -80,13 +80,6 @@
     font-size: 22px;
     margin: 0 0 4px;
     letter-spacing: -0.01em;
-  }
-  header p{
-    margin: 0;
-    color: var(--ink-2);
-    font-size: 14px;
-    line-height: 1.5;
-    max-width: 60ch;
   }
   .card{
     background: var(--surface);
@@ -112,7 +105,7 @@
     font-size:15px; width:100%; font-variant-numeric:tabular-nums;
   }
   .field input[type="number"]:focus{ outline:none; }
-  .field.in .input-wrap{ border-color: color-mix(in oklab, var(--blue) 45%, var(--border)); }
+  .field.in .input-wrap{ border-color: color-mix(in oklab, var(--green) 45%, var(--border)); }
   .field.out .input-wrap{ border-color: color-mix(in oklab, var(--red) 45%, var(--border)); }
 
   .presets{ display:flex; gap:8px; flex-wrap:wrap; }
@@ -127,18 +120,6 @@
   .toggles{ display:flex; gap:18px; flex-wrap:wrap; padding-top:4px; border-top:1px solid var(--hairline); }
   .toggle{ display:flex; align-items:center; gap:7px; font-size:13px; color:var(--ink-2); }
   .toggle input{ accent-color: var(--blue); width:15px; height:15px; }
-
-  .palette-toggle{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
-  .palette-toggle .seg{
-    display:flex; border:1px solid var(--border); border-radius:10px; overflow:hidden;
-  }
-  .palette-toggle .seg button{
-    border:0; background:var(--surface-2); color:var(--ink-2); font-family:inherit;
-    font-size:12.5px; padding:7px 12px; cursor:pointer;
-  }
-  .palette-toggle .seg button[aria-pressed="true"]{ background:var(--blue); color:#fff; }
-  .palette-toggle .cvd-note{ font-size:12px; color:var(--ink-muted); }
-  .palette-toggle .cvd-note b{ color:var(--ink-2); }
 
   /* ---- chart ---- */
   .chart-card{ display:flex; flex-direction:column; gap:14px; align-items:center; }
@@ -186,11 +167,6 @@
   .stats dt{ font-size:12px; color:var(--ink-muted); }
   .stats dd{ margin:0; font-size:15px; font-variant-numeric:tabular-nums; font-weight:600; }
 
-  .notes{ font-size:13px; line-height:1.65; color:var(--ink-2); }
-  .notes p{ margin:0 0 10px; max-width:66ch; }
-  .notes p:last-child{ margin-bottom:0; }
-  .notes b{ color:var(--ink); }
-
   @media (max-width:480px){
     .field-row{ flex-direction:column; }
     .field-row .field{ flex: none; }
@@ -201,8 +177,7 @@
 <body>
 <div class="page">
   <header>
-    <h1>Track chart lab</h1>
-    <p>Testing the in/out balance idea: a racetrack loop where a fixed starting line and a moving divider stand in for a 1:1 ratio. Balanced lands the divider dead opposite the start; imbalance drags it toward the smaller side.</p>
+    <h1>Track Chart</h1>
   </header>
 
   <section class="card controls">
@@ -225,14 +200,6 @@
       <button data-in="50" data-out="950">Extreme deficit</button>
       <button data-in="200" data-out="0">All in, no out</button>
       <button data-in="0" data-out="200">All out, no in</button>
-    </div>
-
-    <div class="palette-toggle">
-      <div class="seg" role="group" aria-label="Color pairing">
-        <button id="paletteBlue" aria-pressed="true">Blue / red</button>
-        <button id="paletteConv" aria-pressed="false">Green / red</button>
-      </div>
-      <span class="cvd-note" id="cvdNote"></span>
     </div>
 
     <div class="toggles">
@@ -278,12 +245,6 @@
     </dl>
   </section>
 
-  <section class="card notes">
-    <p><b>This shape reads ratio, not magnitude.</b> A $10-in/$8-out day and a $10,000-in/$8,000-out day draw the identical loop. The delta figure in the white pill is carrying all of the absolute-size information — the geometry alone can't.</p>
-    <p><b>The reference tick is doing real work.</b> Because the track is left-right symmetric, a perfect 1:1 split is geometrically guaranteed to land opposite the starting line — that part needs no drawn marker. But judging exact distance along a curve is a weaker perceptual skill than judging distance along a line (Cleveland–McGill), so the dashed tick and the straight-line strip above exist to let you check the loop's divider against a strip with the identical ratio and see whether the curved caps make it read further off than it actually is.</p>
-    <p><b>Extreme ratios shrink a band to a sliver</b> rather than clipping a label — try "All in, no out" — which is the right failure mode: the value labels live outside the band in the readout row, so nothing becomes illegible even at 99:1.</p>
-    <p><b>Red/green is the weaker color pairing here.</b> Validated against simulated protanopia at OKLab ΔE, blue↔red separates at 21.6 (comfortably past the 8 target); green↔red separates at only 7.2 — inside the warn band, legal only with a secondary cue like the text labels this chart already carries. Worth deciding deliberately rather than defaulting to the finance-app convention.</p>
-  </section>
 </div>
 
 <script>
@@ -330,12 +291,12 @@
     return sign + '$' + Math.abs(Math.round(n)).toLocaleString();
   }
 
-  var palette = 'blue'; // 'blue' or 'conv'
   function colors(){
     var css = getComputedStyle(document.documentElement);
-    var red = css.getPropertyValue('--red').trim();
-    var inColor = palette === 'blue' ? css.getPropertyValue('--blue').trim() : css.getPropertyValue('--green').trim();
-    return { inColor: inColor, outColor: red };
+    return {
+      inColor: css.getPropertyValue('--green').trim(),
+      outColor: css.getPropertyValue('--red').trim()
+    };
   }
 
   function render(){
@@ -440,21 +401,7 @@
     render();
   });
 
-  var cvdNotes = {
-    blue: 'ΔE 21.6 under simulated protanopia — clears the 8.0 target.',
-    conv: 'ΔE 7.2 under simulated protanopia — inside the 6–8 warn band.'
-  };
-  function setPalette(p){
-    palette = p;
-    document.getElementById('paletteBlue').setAttribute('aria-pressed', p === 'blue');
-    document.getElementById('paletteConv').setAttribute('aria-pressed', p === 'conv');
-    document.getElementById('cvdNote').innerHTML = '<b>' + (p === 'blue' ? 'Blue/red' : 'Green/red') + ':</b> ' + cvdNotes[p];
-    render();
-  }
-  document.getElementById('paletteBlue').addEventListener('click', function(){ setPalette('blue'); });
-  document.getElementById('paletteConv').addEventListener('click', function(){ setPalette('conv'); });
-
-  setPalette('blue');
+  render();
 })();
 </script>
 </body>
