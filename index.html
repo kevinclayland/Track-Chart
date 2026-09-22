@@ -229,8 +229,8 @@
     <h2>What the numbers say</h2>
     <dl>
       <div class="stat"><dt>Delta (in − out)</dt><dd id="statDelta"></dd></div>
-      <div class="stat"><dt>In as share of total flow</dt><dd id="statShare"></dd></div>
-      <div class="stat"><dt>Divider position on loop</dt><dd id="statPos"></dd></div>
+      <div class="stat"><dt>Portion money in</dt><dd id="statPortionIn"></dd></div>
+      <div class="stat"><dt>Portion money out</dt><dd id="statPortionOut"></dd></div>
       <div class="stat"><dt>Drift from balanced</dt><dd id="statDrift"></dd></div>
     </dl>
   </section>
@@ -345,8 +345,8 @@
     // stats
     document.getElementById('statDelta').textContent = fmtMoney(delta);
     document.getElementById('statDelta').style.color = delta > 0 ? 'var(--ok-text)' : delta < 0 ? 'var(--bad-text)' : 'var(--ink)';
-    document.getElementById('statShare').textContent = total > 0 ? (g*100).toFixed(1) + '%' : '—';
-    document.getElementById('statPos').textContent = total > 0 ? (g*100).toFixed(1) + '%' : '—';
+    document.getElementById('statPortionIn').textContent = total > 0 ? (g*100).toFixed(1) + '%' : '—';
+    document.getElementById('statPortionOut').textContent = total > 0 ? ((1-g)*100).toFixed(1) + '%' : '—';
     var drift = (g - 0.5) * 100;
     document.getElementById('statDrift').textContent = total > 0 ? (drift >= 0 ? '+' : '') + drift.toFixed(1) + '%' : '—';
   }
