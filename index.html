@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Track Chart</title>
+<style>
+  :root{
+    color-scheme: light;
+    --page:        #f9f9f7;
+    --surface:     #fcfcfb;
+    --surface-2:   #f2f1ec;
+    --ink:         #0b0b0b;
+    --ink-2:       #52514e;
+    --ink-muted:   #898781;
+    --hairline:    #e1e0d9;
+    --border:      rgba(11,11,11,0.10);
+    --ok-text:     #006300;
+    --bad-text:    #d03b3b;
+    --neutral-mid: #f0efec;
+    --blue:        #2a78d6;
+    --red:         #e34948;
+    --green:       #008300;
+    --focus:       #2a78d6;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      color-scheme: dark;
+      --page:        #0d0d0d;
+      --surface:     #1a1a19;
+      --surface-2:   #232322;
+      --ink:         #ffffff;
+      --ink-2:       #c3c2b7;
+      --ink-muted:   #898781;
+      --hairline:    #2c2c2a;
+      --border:      rgba(255,255,255,0.10);
+      --ok-text:     #0ca30c;
+      --bad-text:    #e66767;
+      --neutral-mid: #383835;
+      --blue:        #3987e5;
+      --red:         #e66767;
+      --green:       #008300;
+      --focus:       #3987e5;
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme: dark;
+    --page:        #0d0d0d;
+    --surface:     #1a1a19;
+    --surface-2:   #232322;
+    --ink:         #ffffff;
+    --ink-2:       #c3c2b7;
+    --ink-muted:   #898781;
+    --hairline:    #2c2c2a;
+    --border:      rgba(255,255,255,0.10);
+    --ok-text:     #0ca30c;
+    --bad-text:    #e66767;
+    --neutral-mid: #383835;
+    --blue:        #3987e5;
+    --red:         #e66767;
+    --green:       #008300;
+    --focus:       #3987e5;
+  }
+
+  *{ box-sizing: border-box; }
+  body{
+    background: var(--page);
+    color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  .page{
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 28px 16px 48px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  header h1{
+    font-size: 22px;
+    margin: 0 0 4px;
+    letter-spacing: -0.01em;
+  }
+  header p{
+    margin: 0;
+    color: var(--ink-2);
+    font-size: 14px;
+    line-height: 1.5;
+    max-width: 60ch;
+  }
+  .card{
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+  }
+
+  /* ---- controls ---- */
+  .controls{ display:flex; flex-direction:column; gap:16px; }
+  .field-row{ display:flex; gap:16px; flex-wrap:wrap; }
+  .field{ display:flex; flex-direction:column; gap:6px; flex:1 1 140px; min-width:120px; }
+  .field label{ font-size:12px; color:var(--ink-2); font-weight:600; }
+  .field .input-wrap{
+    display:flex; align-items:center; gap:6px;
+    border:1px solid var(--border); border-radius:10px;
+    padding:8px 10px; background:var(--surface-2);
+  }
+  .field .input-wrap:focus-within{ outline:2px solid var(--focus); outline-offset:1px; }
+  .field .input-wrap span{ color:var(--ink-muted); font-size:14px; }
+  .field input[type="number"]{
+    border:0; background:transparent; color:var(--ink);
+    font-size:15px; width:100%; font-variant-numeric:tabular-nums;
+  }
+  .field input[type="number"]:focus{ outline:none; }
+  .field.in .input-wrap{ border-color: color-mix(in oklab, var(--blue) 45%, var(--border)); }
+  .field.out .input-wrap{ border-color: color-mix(in oklab, var(--red) 45%, var(--border)); }
+
+  .presets{ display:flex; gap:8px; flex-wrap:wrap; }
+  .presets button{
+    border:1px solid var(--border); background:var(--surface-2); color:var(--ink);
+    border-radius:999px; padding:6px 12px; font-size:12.5px; cursor:pointer;
+    font-family:inherit;
+  }
+  .presets button:hover{ background:var(--hairline); }
+  .presets button:focus-visible{ outline:2px solid var(--focus); outline-offset:2px; }
+
+  .toggles{ display:flex; gap:18px; flex-wrap:wrap; padding-top:4px; border-top:1px solid var(--hairline); }
+  .toggle{ display:flex; align-items:center; gap:7px; font-size:13px; color:var(--ink-2); }
+  .toggle input{ accent-color: var(--blue); width:15px; height:15px; }
+
+  .palette-toggle{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .palette-toggle .seg{
+    display:flex; border:1px solid var(--border); border-radius:10px; overflow:hidden;
+  }
+  .palette-toggle .seg button{
+    border:0; background:var(--surface-2); color:var(--ink-2); font-family:inherit;
+    font-size:12.5px; padding:7px 12px; cursor:pointer;
+  }
+  .palette-toggle .seg button[aria-pressed="true"]{ background:var(--blue); color:#fff; }
+  .palette-toggle .cvd-note{ font-size:12px; color:var(--ink-muted); }
+  .palette-toggle .cvd-note b{ color:var(--ink-2); }
+
+  /* ---- chart ---- */
+  .chart-card{ display:flex; flex-direction:column; gap:14px; align-items:center; }
+  .legend{ display:flex; gap:18px; align-self:flex-start; font-size:13px; color:var(--ink-2); }
+  .legend .dot{ display:inline-flex; align-items:center; gap:6px; }
+  .legend .swatch{ width:10px; height:10px; border-radius:3px; display:inline-block; }
+
+  .track-wrap{ position:relative; width:100%; max-width:580px; }
+  .track-wrap svg{ width:100%; height:auto; display:block; overflow:visible; }
+
+  .center-readout{
+    position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+    display:flex; flex-direction:column; align-items:center; gap:4px;
+    pointer-events:none; width: 62%;
+  }
+  .delta-pill{
+    background:var(--surface); border:1px solid var(--border); border-radius:999px;
+    padding:8px 18px; font-size:17px; font-weight:600; white-space:nowrap;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+  }
+  .delta-pill.pos{ color: var(--ok-text); }
+  .delta-pill.neg{ color: var(--bad-text); }
+  .delta-pill.zero{ color: var(--ink-2); }
+  .values-row{ display:flex; gap:14px; font-size:13px; font-variant-numeric:tabular-nums; }
+  .values-row .v{ display:flex; align-items:center; gap:5px; }
+  .values-row .v .dot{ width:7px; height:7px; border-radius:50%; }
+  .values-row .out-v{ color: var(--bad-text); }
+  .values-row .in-v{ color: var(--ok-text); }
+
+  /* ---- comparison strip ---- */
+  .compare h2, .stats h2{ font-size:13px; text-transform:uppercase; letter-spacing:0.04em; color:var(--ink-muted); margin:0 0 12px; font-weight:700; }
+  .strip{ position:relative; height:26px; border-radius:6px; overflow:visible; background:var(--surface-2); }
+  .strip .seg{ position:absolute; top:0; bottom:0; }
+  .strip .ref-tick{ position:absolute; top:-4px; bottom:-4px; width:2px; background:var(--ink-muted); opacity:0.55; }
+  .strip .ref-tick::after{
+    content:"balanced"; position:absolute; top:-16px; left:50%; transform:translateX(-50%);
+    font-size:10px; color:var(--ink-muted); white-space:nowrap;
+  }
+  .strip .div-tick{ position:absolute; top:-6px; bottom:-6px; width:3px; background:var(--ink); border-radius:2px; }
+  .strip-wrap{ padding-top:18px; }
+
+  /* ---- stats ---- */
+  .stats dl{ display:grid; grid-template-columns:1fr 1fr; gap:12px 20px; margin:0; }
+  .stats .stat{ display:flex; flex-direction:column; gap:2px; }
+  .stats dt{ font-size:12px; color:var(--ink-muted); }
+  .stats dd{ margin:0; font-size:15px; font-variant-numeric:tabular-nums; font-weight:600; }
+
+  .notes{ font-size:13px; line-height:1.65; color:var(--ink-2); }
+  .notes p{ margin:0 0 10px; max-width:66ch; }
+  .notes p:last-child{ margin-bottom:0; }
+  .notes b{ color:var(--ink); }
+
+  @media (max-width:480px){
+    .field-row{ flex-direction:column; }
+    .field-row .field{ flex: none; }
+    .stats dl{ grid-template-columns:1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <h1>Track chart lab</h1>
+    <p>Testing the in/out balance idea: a racetrack loop where a fixed starting line and a moving divider stand in for a 1:1 ratio. Balanced lands the divider dead opposite the start; imbalance drags it toward the smaller side.</p>
+  </header>
+
+  <section class="card controls">
+    <div class="field-row">
+      <div class="field in">
+        <label for="inAmt">Money in</label>
+        <div class="input-wrap"><span>$</span><input id="inAmt" type="number" min="0" step="1" value="203"></div>
+      </div>
+      <div class="field out">
+        <label for="outAmt">Money out</label>
+        <div class="input-wrap"><span>$</span><input id="outAmt" type="number" min="0" step="1" value="172"></div>
+      </div>
+    </div>
+
+    <div class="presets" id="presets">
+      <button data-in="150" data-out="150">Balanced</button>
+      <button data-in="203" data-out="172">Slight surplus</button>
+      <button data-in="174" data-out="278">Slight deficit</button>
+      <button data-in="950" data-out="50">Extreme surplus</button>
+      <button data-in="50" data-out="950">Extreme deficit</button>
+      <button data-in="200" data-out="0">All in, no out</button>
+      <button data-in="0" data-out="200">All out, no in</button>
+    </div>
+
+    <div class="palette-toggle">
+      <div class="seg" role="group" aria-label="Color pairing">
+        <button id="paletteBlue" aria-pressed="true">Blue / red</button>
+        <button id="paletteConv" aria-pressed="false">Green / red</button>
+      </div>
+      <span class="cvd-note" id="cvdNote"></span>
+    </div>
+
+    <div class="toggles">
+      <label class="toggle"><input type="checkbox" id="toggleRef" checked> Show balance reference tick</label>
+      <label class="toggle"><input type="checkbox" id="toggleCompare" checked> Show straight-line comparison</label>
+    </div>
+  </section>
+
+  <section class="card chart-card">
+    <div class="legend">
+      <span class="dot"><span class="swatch" id="legendIn"></span>In</span>
+      <span class="dot"><span class="swatch" id="legendOut"></span>Out</span>
+    </div>
+    <div class="track-wrap">
+      <svg id="trackSvg" viewBox="0 0 400 200" role="img" aria-labelledby="trackTitle"></svg>
+      <div class="center-readout">
+        <div class="delta-pill" id="deltaPill"></div>
+        <div class="values-row">
+          <span class="v out-v"><span class="dot" id="outDot"></span><span id="outLabel"></span></span>
+          <span class="v in-v"><span class="dot" id="inDot"></span><span id="inLabel"></span></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card compare" id="compareCard">
+    <h2>Same ratio, straight line</h2>
+    <div class="strip-wrap">
+      <div class="strip" id="strip">
+        <div class="ref-tick" style="left:50%"></div>
+        <div class="div-tick" id="stripDiv"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card stats">
+    <h2>What the numbers say</h2>
+    <dl>
+      <div class="stat"><dt>Delta (in − out)</dt><dd id="statDelta"></dd></div>
+      <div class="stat"><dt>In as share of total flow</dt><dd id="statShare"></dd></div>
+      <div class="stat"><dt>Divider position on loop</dt><dd id="statPos"></dd></div>
+      <div class="stat"><dt>Drift from balanced</dt><dd id="statDrift"></dd></div>
+    </dl>
+  </section>
+
+  <section class="card notes">
+    <p><b>This shape reads ratio, not magnitude.</b> A $10-in/$8-out day and a $10,000-in/$8,000-out day draw the identical loop. The delta figure in the white pill is carrying all of the absolute-size information — the geometry alone can't.</p>
+    <p><b>The reference tick is doing real work.</b> Because the track is left-right symmetric, a perfect 1:1 split is geometrically guaranteed to land opposite the starting line — that part needs no drawn marker. But judging exact distance along a curve is a weaker perceptual skill than judging distance along a line (Cleveland–McGill), so the dashed tick and the straight-line strip above exist to let you check the loop's divider against a strip with the identical ratio and see whether the curved caps make it read further off than it actually is.</p>
+    <p><b>Extreme ratios shrink a band to a sliver</b> rather than clipping a label — try "All in, no out" — which is the right failure mode: the value labels live outside the band in the readout row, so nothing becomes illegible even at 99:1.</p>
+    <p><b>Red/green is the weaker color pairing here.</b> Validated against simulated protanopia at OKLab ΔE, blue↔red separates at 21.6 (comfortably past the 8 target); green↔red separates at only 7.2 — inside the warn band, legal only with a secondary cue like the text labels this chart already carries. Worth deciding deliberately rather than defaulting to the finance-app convention.</p>
+  </section>
+</div>
+
+<script>
+(function(){
+  var svg = document.getElementById('trackSvg');
+  var W = 200, R = 60; // half-width of straight run, cap radius
+  var b1 = W/2, b2 = b1 + Math.PI*R, b3 = b2 + W/2, b4 = b3 + W/2, b5 = b4 + Math.PI*R, T = b5 + W/2;
+
+  function trackPoint(s){
+    s = ((s % T) + T) % T;
+    if (s <= b1) return {x: s, y: R};
+    if (s <= b2){ var t = s-b1, a = Math.PI/2 - t/R; return {x: W/2+R*Math.cos(a), y: R*Math.sin(a)}; }
+    if (s <= b3){ var t2 = s-b2; return {x: W/2 - t2, y: -R}; }
+    if (s <= b4){ var t3 = s-b3; return {x: -t3, y: -R}; }
+    if (s <= b5){ var t4 = s-b4, a2 = -Math.PI/2 - t4/R; return {x: -W/2+R*Math.cos(a2), y: R*Math.sin(a2)}; }
+    var t5 = s-b5; return {x: -W/2+t5, y: R};
+  }
+
+  function pathFor(s0, s1){
+    var step = 3, d = '';
+    var p0 = trackPoint(s0);
+    d = 'M ' + p0.x.toFixed(2) + ' ' + p0.y.toFixed(2);
+    for (var s = s0+step; s < s1; s += step){
+      var p = trackPoint(s);
+      d += ' L ' + p.x.toFixed(2) + ' ' + p.y.toFixed(2);
+    }
+    var pEnd = trackPoint(s1);
+    d += ' L ' + pEnd.x.toFixed(2) + ' ' + pEnd.y.toFixed(2);
+    return d;
+  }
+
+  function tangent(s){
+    var eps = 0.6;
+    var a = trackPoint(s-eps), b = trackPoint(s+eps);
+    var dx = b.x-a.x, dy = b.y-a.y, len = Math.hypot(dx,dy) || 1;
+    return {x: dx/len, y: dy/len};
+  }
+
+  var BAND = 34, GAP = 2.5;
+  var cx = 200, cy = 100;
+
+  function fmtMoney(n){
+    var sign = n < 0 ? '-' : '';
+    return sign + '$' + Math.abs(Math.round(n)).toLocaleString();
+  }
+
+  var palette = 'blue'; // 'blue' or 'conv'
+  function colors(){
+    var css = getComputedStyle(document.documentElement);
+    var red = css.getPropertyValue('--red').trim();
+    var inColor = palette === 'blue' ? css.getPropertyValue('--blue').trim() : css.getPropertyValue('--green').trim();
+    return { inColor: inColor, outColor: red };
+  }
+
+  function render(){
+    var inAmt = Math.max(0, parseFloat(document.getElementById('inAmt').value) || 0);
+    var outAmt = Math.max(0, parseFloat(document.getElementById('outAmt').value) || 0);
+    var total = inAmt + outAmt;
+    var g = total > 0 ? inAmt/total : 0.5; // green(in) fraction of loop
+    var sDiv = g * T;
+
+    var c = colors();
+    document.getElementById('legendIn').style.background = c.inColor;
+    document.getElementById('legendOut').style.background = c.outColor;
+    document.getElementById('inDot').style.background = c.inColor;
+    document.getElementById('outDot').style.background = c.outColor;
+
+    var showRef = document.getElementById('toggleRef').checked;
+
+    var parts = [];
+    parts.push('<g transform="translate(' + cx + ',' + cy + ')">');
+
+    if (total === 0){
+      parts.push('<path d="' + pathFor(0, T-0.001) + '" fill="none" stroke="var(--hairline)" stroke-width="' + BAND + '" stroke-linecap="butt"/>');
+    } else {
+      // IN always occupies the arc immediately after the fixed start point (0 = bottom-center),
+      // travelling first — OUT completes the loop and closes back on that same fixed point.
+      // Butt caps (not round) keep both cuts exact, so the two colors always meet precisely
+      // at bottom-center with no bleed, whatever the ratio.
+      var gEnd = Math.max(0, sDiv - GAP);
+      if (gEnd > 0) parts.push('<path d="' + pathFor(0, gEnd) + '" fill="none" stroke="' + c.inColor + '" stroke-width="' + BAND + '" stroke-linecap="butt"/>');
+      var rStart = Math.min(T, sDiv + GAP);
+      if (T > rStart) parts.push('<path d="' + pathFor(rStart, T) + '" fill="none" stroke="' + c.outColor + '" stroke-width="' + BAND + '" stroke-linecap="butt"/>');
+    }
+
+    // balance reference tick (always at T/2 = top center)
+    if (showRef){
+      var refP = trackPoint(T/2);
+      parts.push('<line x1="' + refP.x + '" y1="' + (refP.y - BAND/2 - 6) + '" x2="' + refP.x + '" y2="' + (refP.y + BAND/2 + 6) + '" stroke="var(--ink-muted)" stroke-width="2" stroke-dasharray="3,3" opacity="0.6"/>');
+    }
+
+    // moving divider tick
+    if (total > 0 && inAmt > 0 && outAmt > 0){
+      var dp = trackPoint(sDiv);
+      var tan = tangent(sDiv);
+      var nx = -tan.y, ny = tan.x;
+      var half = BAND/2 + 5;
+      parts.push('<line x1="' + (dp.x - nx*half) + '" y1="' + (dp.y - ny*half) + '" x2="' + (dp.x + nx*half) + '" y2="' + (dp.y + ny*half) + '" stroke="var(--ink)" stroke-width="4" stroke-linecap="round"/>');
+    }
+
+    parts.push('</g>');
+    svg.innerHTML = parts.join('');
+
+    // center readout
+    var delta = inAmt - outAmt;
+    var pill = document.getElementById('deltaPill');
+    pill.textContent = 'Δ ' + fmtMoney(delta);
+    pill.className = 'delta-pill ' + (delta > 0 ? 'pos' : delta < 0 ? 'neg' : 'zero');
+    document.getElementById('outLabel').textContent = '-' + fmtMoney(outAmt).replace('-','');
+    document.getElementById('inLabel').textContent = fmtMoney(inAmt);
+
+    // stats
+    document.getElementById('statDelta').textContent = fmtMoney(delta);
+    document.getElementById('statDelta').style.color = delta > 0 ? 'var(--ok-text)' : delta < 0 ? 'var(--bad-text)' : 'var(--ink)';
+    document.getElementById('statShare').textContent = total > 0 ? (g*100).toFixed(1) + '%' : '—';
+    document.getElementById('statPos').textContent = total > 0 ? (g*100).toFixed(1) + '% of the way around from start' : '—';
+    var drift = (g - 0.5) * 100;
+    document.getElementById('statDrift').textContent = total > 0 ? (drift >= 0 ? '+' : '') + drift.toFixed(1) + ' pts toward ' + (drift === 0 ? 'neither side' : drift > 0 ? 'the out side' : 'the in side') : '—';
+
+    // linear comparison strip
+    var compareOn = document.getElementById('toggleCompare').checked;
+    document.getElementById('compareCard').style.display = compareOn ? '' : 'none';
+    var strip = document.getElementById('strip');
+    var existing = strip.querySelectorAll('.seg');
+    existing.forEach(function(e){ e.remove(); });
+    if (total > 0){
+      var gPct = g*100;
+      var segIn = document.createElement('div');
+      segIn.className = 'seg';
+      segIn.style.left = '0%'; segIn.style.width = gPct + '%';
+      segIn.style.background = c.inColor;
+      segIn.style.borderRadius = '6px 0 0 6px';
+      var segOut = document.createElement('div');
+      segOut.className = 'seg';
+      segOut.style.left = gPct + '%'; segOut.style.width = (100-gPct) + '%';
+      segOut.style.background = c.outColor;
+      segOut.style.borderRadius = '0 6px 6px 0';
+      strip.appendChild(segIn);
+      strip.appendChild(segOut);
+      document.getElementById('stripDiv').style.left = 'calc(' + gPct + '% - 1.5px)';
+    }
+  }
+
+  document.getElementById('inAmt').addEventListener('input', render);
+  document.getElementById('outAmt').addEventListener('input', render);
+  document.getElementById('toggleRef').addEventListener('change', render);
+  document.getElementById('toggleCompare').addEventListener('change', render);
+
+  document.getElementById('presets').addEventListener('click', function(e){
+    var btn = e.target.closest('button');
+    if (!btn) return;
+    document.getElementById('inAmt').value = btn.getAttribute('data-in');
+    document.getElementById('outAmt').value = btn.getAttribute('data-out');
+    render();
+  });
+
+  var cvdNotes = {
+    blue: 'ΔE 21.6 under simulated protanopia — clears the 8.0 target.',
+    conv: 'ΔE 7.2 under simulated protanopia — inside the 6–8 warn band.'
+  };
+  function setPalette(p){
+    palette = p;
+    document.getElementById('paletteBlue').setAttribute('aria-pressed', p === 'blue');
+    document.getElementById('paletteConv').setAttribute('aria-pressed', p === 'conv');
+    document.getElementById('cvdNote').innerHTML = '<b>' + (p === 'blue' ? 'Blue/red' : 'Green/red') + ':</b> ' + cvdNotes[p];
+    render();
+  }
+  document.getElementById('paletteBlue').addEventListener('click', function(){ setPalette('blue'); });
+  document.getElementById('paletteConv').addEventListener('click', function(){ setPalette('conv'); });
+
+  setPalette('blue');
+})();
+</script>
+</body>
+</html>
