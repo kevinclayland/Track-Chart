@@ -2,7 +2,7 @@
 
 ![Track Chart demo](assets/track-chart-type.png)
 
-A new chart type I created for checking whether two opposing flows are in balance at a glance, without reading a number first.
+A chart experiment I created for checking whether two opposing flows are in balance at a glance, without reading a number first. Based on a Pie and gauge chart.
 
 **Live demo:** https://kevinclayland.github.io/Track-Chart/
 
